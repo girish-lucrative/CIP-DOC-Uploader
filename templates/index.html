@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIP DOC Uploader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            color: #333;
+        }
+
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        .upload-box {
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #fafafa;
+            margin-bottom: 15px;
+        }
+
+        .upload-box:hover {
+            border-color: #666;
+        }
+
+        .upload-box.dragover {
+            border-color: #2196F3;
+            background: #f0f8ff;
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .upload-hint {
+            color: #888;
+            font-size: 13px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-list {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            display: none;
+            background: #fff;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-number {
+            background: #4CAF50;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .file-name {
+            flex: 1;
+            color: #333;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .remove-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .remove-btn:hover {
+            background: #cc0000;
+        }
+
+        .process-btn {
+            width: 100%;
+            padding: 14px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .process-btn:hover:not(:disabled) {
+            background: #0d8bf2;
+        }
+
+        .process-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-text {
+            color: #666;
+            font-size: 13px;
+            margin-top: 8px;
+            text-align: center;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        /* New styles for BRC Type dropdown */
+        .brc-type-group {
+            display: none;
+            margin-bottom: 25px;
+        }
+        
+        .brc-type-group.visible {
+            display: block;
+        }
+        
+        /* New styles for IEC Number input */
+        .iec-group {
+            display: none;
+            margin-bottom: 25px;
+        }
+        
+        .iec-group.visible {
+            display: block;
+        }
+        
+        /* Small notification about automation */
+        .auto-notice {
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 15px;
+            padding: 8px;
+            background: #f0f8ff;
+            border-radius: 4px;
+            border-left: 3px solid #2196F3;
+        }
+        
+        .optional-text {
+            color: #888;
+            font-size: 12px;
+            font-weight: normal;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CIP DOC UPLOAD</h1>
+        
+        <div class="form-group">
+            <label for="processType">Select Process:</label>
+            <select id="processType" name="process_type">
+                <option value="">-- Select Process --</option>
+                <option value="dbk_disbursement">DBK Disbursement</option>
+                <option value="dbk_pendency">DBK Pendency</option>
+                <option value="brc">BRC</option>
+                <!-- <option value="irm">IRM</option> -->
+                <option value="igst_scroll">IGST Scroll</option>
+                <option value="rodtep_scroll">RODTEP Scroll</option>
+                <option value="rodtep_scrip">RODTEP Scrip</option>
+            </select>
+        </div>
+        
+        <!-- New BRC Type dropdown -->
+        <div class="form-group brc-type-group" id="brcTypeGroup">
+            <label for="brcType">BRC Type:</label>
+            <select id="brcType" name="brc_type">
+                <option value="">-- Select BRC Type --</option>
+                <option value="foc">FOC</option>
+                <option value="inv">INV</option>
+            </select>
+        </div>
+        
+        <!-- New IEC Number input -->
+        <div class="form-group iec-group" id="iecGroup">
+            <label for="iecNumber">
+                IEC Number: <span class="optional-text">(Optional)</span>
+            </label>
+            <input type="text" id="iecNumber" name="iec_number" 
+                   placeholder="Enter IEC Number (e.g., ALFA12345)">
+            <div class="info-text" style="margin-top: 5px;">
+                Used for CIP-Signal automation. Leave empty if not needed.
+            </div>
+        </div>
+        
+        <div class="upload-box" id="uploadBox">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text" id="uploadText">Select Excel File(s)</div>
+            <div class="upload-hint" id="uploadHint">Click or drop files here</div>
+            <input type="file" id="fileInput" multiple accept=".xlsx,.xls">
+        </div>
+        
+        <div class="info-text" id="infoText"></div>
+        
+        <div class="file-list" id="fileList"></div>
+        
+        <button class="process-btn" id="processBtn" disabled>Process Files & Download</button>
+        
+        <div class="auto-notice" id="autoNotice">
+            <strong>Note:</strong> After download, CIP-Signal automation will start automatically for processes that support it.
+        </div>
+        
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const processType = document.getElementById('processType');
+        const brcTypeGroup = document.getElementById('brcTypeGroup');
+        const brcType = document.getElementById('brcType');
+        const iecGroup = document.getElementById('iecGroup');
+        const iecNumber = document.getElementById('iecNumber');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBox = document.getElementById('uploadBox');
+        const uploadText = document.getElementById('uploadText');
+        const uploadHint = document.getElementById('uploadHint');
+        const infoText = document.getElementById('infoText');
+        const fileList = document.getElementById('fileList');
+        const processBtn = document.getElementById('processBtn');
+        const message = document.getElementById('message');
+        const autoNotice = document.getElementById('autoNotice');
+        
+        let files = [];
+        
+        // Define processes that show IEC field
+        const processesWithIEC = [
+            'dbk_disbursement',
+            'dbk_pendency',
+            'brc',
+            'irm',
+            'igst_scroll',
+            'rodtep_scroll',
+            'rodtep_scrip'
+        ];
+        
+        // Process type change handler
+        processType.addEventListener('change', function() {
+            const selectedValue = this.value;
+            
+            // Clear previous files
+            files = [];
+            fileInput.value = '';
+            fileList.style.display = 'none';
+            processBtn.disabled = true;
+            infoText.textContent = '';
+            
+            // Show/hide BRC Type dropdown
+            if (selectedValue === 'brc') {
+                brcTypeGroup.classList.add('visible');
+                brcType.value = ''; // Reset when BRC is selected
+            } else {
+                brcTypeGroup.classList.remove('visible');
+                brcType.value = ''; // Reset BRC type when not BRC
+            }
+            
+            // Show/hide IEC Number input
+            if (processesWithIEC.includes(selectedValue)) {
+                iecGroup.classList.add('visible');
+                iecNumber.value = ''; // Reset IEC number
+            } else {
+                iecGroup.classList.remove('visible');
+                iecNumber.value = ''; // Reset IEC number
+            }
+            
+            // Update upload area text based on selection
+            if (selectedValue === 'dbk_disbursement' || selectedValue === 'dbk_pendency' || selectedValue === 'brc') {
+                uploadText.textContent = 'Select Multiple Excel Files';
+                uploadHint.textContent = 'Files will be merged';
+                fileInput.multiple = true;
+                infoText.textContent = 'Multiple files allowed. Files will be merged.';
+            } else if (selectedValue) {
+                uploadText.textContent = 'Select Excel File';
+                uploadHint.textContent = 'Single file only';
+                fileInput.multiple = false;
+                infoText.textContent = 'Single file only.';
+            } else {
+                uploadText.textContent = 'Select Excel File(s)';
+                uploadHint.textContent = 'Click or drop files here';
+                fileInput.multiple = true;
+                infoText.textContent = '';
+            }
+            
+            // Update automation notice based on process
+            if (processesWithIEC.includes(selectedValue)) {
+                autoNotice.style.display = 'block';
+            } else {
+                autoNotice.style.display = 'none';
+            }
+        });
+        
+        // BRC Type change handler
+        brcType.addEventListener('change', function() {
+            console.log('BRC Type selected:', this.value);
+        });
+        
+        // Click upload box to select files
+        uploadBox.addEventListener('click', () => {
+            if (!processType.value) {
+                showMessage('Please select a process type first', 'error');
+                return;
+            }
+            
+            // If BRC is selected, validate BRC Type
+            if (processType.value === 'brc' && !brcType.value) {
+                showMessage('Please select a BRC Type first', 'error');
+                return;
+            }
+            
+            fileInput.click();
+        });
+        
+        // Handle file selection
+        fileInput.addEventListener('change', (e) => {
+            if (!processType.value) {
+                showMessage('Please select a process type first', 'error');
+                fileInput.value = '';
+                return;
+            }
+            
+            // If BRC is selected, validate BRC Type
+            if (processType.value === 'brc' && !brcType.value) {
+                showMessage('Please select a BRC Type first', 'error');
+                fileInput.value = '';
+                return;
+            }
+            
+            const newFiles = Array.from(e.target.files);
+            
+            // Validate file types
+            for (const file of newFiles) {
+                if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                    showMessage('Only Excel files (.xlsx, .xls) allowed', 'error');
+                    fileInput.value = '';
+                    return;
+                }
+            }
+            
+            // Validate number of files based on process type
+            const selectedValue = processType.value;
+            if (selectedValue === 'dbk_disbursement' || selectedValue === 'dbk_pendency' || selectedValue === 'brc') {
+                // These processes can have multiple files
+                files = files.concat(newFiles);
+            } else {
+                // Other processes only allow one file
+                if (newFiles.length > 1) {
+                    showMessage('Only one file allowed for this process', 'error');
+                    fileInput.value = '';
+                    return;
+                }
+                files = newFiles; // Replace with new single file
+            }
+            
+            updateFileList();
+        });
+        
+        // Drag and drop
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('dragover');
+        });
+        
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('dragover');
+        });
+        
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            
+            if (!processType.value) {
+                showMessage('Please select a process type first', 'error');
+                return;
+            }
+            
+            // If BRC is selected, validate BRC Type
+            if (processType.value === 'brc' && !brcType.value) {
+                showMessage('Please select a BRC Type first', 'error');
+                return;
+            }
+            
+            const newFiles = Array.from(e.dataTransfer.files);
+            
+            // Validate file types
+            for (const file of newFiles) {
+                if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                    showMessage('Only Excel files (.xlsx, .xls) allowed', 'error');
+                    return;
+                }
+            }
+            
+            // Validate number of files based on process type
+            const selectedValue = processType.value;
+            if (selectedValue === 'dbk_disbursement' || selectedValue === 'dbk_pendency' || selectedValue === 'brc') {
+                files = files.concat(newFiles);
+            } else {
+                if (newFiles.length > 1) {
+                    showMessage('Only one file allowed for this process', 'error');
+                    return;
+                }
+                files = newFiles;
+            }
+            
+            updateFileList();
+        });
+        
+        // Update file list display
+        function updateFileList() {
+            if (files.length === 0) {
+                fileList.style.display = 'none';
+                processBtn.disabled = true;
+                return;
+            }
+            
+            // Sort by sequence number (for DBK processes)
+            const sorted = [...files].sort((a, b) => {
+                const getNum = (name) => {
+                    const match = name.match(/\((\d+)\)/);
+                    return match ? parseInt(match[1]) : 0;
+                };
+                return getNum(a.name) - getNum(b.name);
+            });
+            
+            let html = '';
+            sorted.forEach((file, index) => {
+                html += `
+                    <div class="file-item">
+                        <div class="file-number">${index + 1}</div>
+                        <div class="file-name">${file.name}</div>
+                        <button class="remove-btn" onclick="removeFile(${index})">×</button>
+                    </div>
+                `;
+            });
+            
+            fileList.innerHTML = html;
+            fileList.style.display = 'block';
+            processBtn.disabled = false;
+        }
+        
+        // Remove file
+        window.removeFile = function(index) {
+            files.splice(index, 1);
+            updateFileList();
+        };
+        
+        // Process files
+        processBtn.addEventListener('click', async () => {
+            if (!processType.value) {
+                showMessage('Please select a process type', 'error');
+                return;
+            }
+            
+            // If BRC is selected, validate BRC Type
+            if (processType.value === 'brc' && !brcType.value) {
+                showMessage('Please select a BRC Type', 'error');
+                return;
+            }
+            
+            if (files.length === 0) {
+                showMessage('Please select at least one file', 'error');
+                return;
+            }
+            
+            // Validate file count based on process type
+            const selectedValue = processType.value;
+            if (!(selectedValue === 'dbk_disbursement' || selectedValue === 'dbk_pendency' || selectedValue === 'brc')) {
+                if (files.length !== 1) {
+                    showMessage('Please select exactly one file for this process', 'error');
+                    return;
+                }
+            }
+            
+            processBtn.disabled = true;
+            processBtn.textContent = 'Processing...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('process_type', selectedValue);
+                formData.append('brc_type', brcType.value); // Add BRC type to form data
+                formData.append('iec_number', iecNumber.value); // Add IEC number to form data
+                files.forEach(file => formData.append('files[]', file));
+                
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    // Get filename from response headers or use default
+                    const contentDisposition = response.headers.get('content-disposition');
+                    let filename = 'processed.xlsx';
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename="?(.+)"?/);
+                        if (match) filename = decodeURIComponent(match[1]);
+                    }
+                    
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+                    
+                    showMessage('Processing completed! File downloaded. Starting CIP-Signal automation...', 'success');
+                    
+                    // Reset after success
+                    setTimeout(() => {
+                        files = [];
+                        fileInput.value = '';
+                        updateFileList();
+                        message.style.display = 'none';
+                    }, 3000);
+                    
+                } else {
+                    // Try to get error message
+                    let errorText = 'Processing failed';
+                    try {
+                        const errorJson = await response.json();
+                        errorText = errorJson.error || errorText;
+                    } catch (e) {
+                        errorText = `Server error: ${response.status}`;
+                    }
+                    throw new Error(errorText);
+                }
+                
+            } catch (err) {
+                showMessage('Error: ' + err.message, 'error');
+            } finally {
+                processBtn.disabled = false;
+                processBtn.textContent = 'Process Files & Download';
+            }
+        });
+        
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = 'message ' + type;
+            message.style.display = 'block';
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
