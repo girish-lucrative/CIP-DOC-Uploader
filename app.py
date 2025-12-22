@@ -603,7 +603,7 @@ if __name__ == '__main__':
         # print("  - Browser will open VISIBLY (not in background)")
         # print("  - Will upload the processed file to CIP-Signal portal")
         # print("  - Will select IEC if provided")
-        # print("  - For BRC: Will select BRC type (FOC/INV) before IEC selection")
+        # print("  - For BRC: Will select BRC type (FOB/INV) before IEC selection")
     else:
         print("✗ Selenium automation: NOT AVAILABLE")
         # print("  To enable automation, install:")

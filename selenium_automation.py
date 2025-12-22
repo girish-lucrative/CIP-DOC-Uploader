@@ -28,312 +28,145 @@ PROCESS_TO_CARD_MAP = {
     # Add other mappings as needed
 }
 
-# def handle_popup(driver, wait):
-#     """Handle any popups that appear after login"""
-#     try:
-#         print("Checking for popups after login...")
-        
-#         # Wait a bit for popup to appear
-#         time.sleep(2)
-        
-#         popup_handled = False
-        
-#         # STRATEGY 1: SPECIFICALLY HANDLE "CHANGE YOUR PASSWORD" POPUP
-#         # Look for modal that contains text about changing password
-#         try:
-#             print("Looking for 'change password' popup...")
-            
-#             # Look for any element containing password-related text
-#             password_popup_elements = driver.find_elements(By.XPATH, 
-#                 "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'change your password') or "
-#                 "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'change password') or "
-#                 "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'password change') or "
-#                 "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'password expiry') or "
-#                 "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'password alert')]"
-#             )
-            
-#             if password_popup_elements:
-#                 print(f"Found {len(password_popup_elements)} element(s) with password change text")
-                
-#                 # Find the modal or dialog containing this text
-#                 for element in password_popup_elements:
-#                     try:
-#                         # Go up the DOM to find the modal/dialog container
-#                         modal_container = element
-#                         for _ in range(5):  # Go up 5 levels max
-#                             modal_container = modal_container.find_element(By.XPATH, "..")
-#                             tag_name = modal_container.tag_name.lower()
-#                             class_attr = modal_container.get_attribute("class") or ""
-                            
-#                             # Check if this looks like a modal container
-#                             if any(modal_class in class_attr.lower() for modal_class in ['modal', 'dialog', 'popup', 'alert', 'ant-modal']):
-#                                 print(f"Found modal container with class: {class_attr}")
-                                
-#                                 # Now look for OK/Close buttons in this container
-#                                 buttons = modal_container.find_elements(By.TAG_NAME, "button")
-#                                 for button in buttons:
-#                                     button_text = button.text.strip().lower()
-#                                     if button_text in ['ok', 'okay', 'close', 'got it', 'dismiss', 'continue', 'proceed']:
-#                                         print(f"Found button with text: '{button.text}', clicking...")
-#                                         button.click()
-#                                         time.sleep(1)
-#                                         popup_handled = True
-#                                         print("✓ Password change popup handled")
-#                                         return popup_handled
-                                
-#                                 # Also look for links or other clickable elements
-#                                 clickables = modal_container.find_elements(By.XPATH, ".//*[self::a or self::span or self::div][contains(text(), 'OK') or contains(text(), 'Close')]")
-#                                 for clickable in clickables:
-#                                     print(f"Found clickable element with text: '{clickable.text}', clicking...")
-#                                     clickable.click()
-#                                     time.sleep(1)
-#                                     popup_handled = True
-#                                     print("✓ Password change popup handled via clickable element")
-#                                     return popup_handled
-#                     except:
-#                         continue
-        
-#         except Exception as e:
-#             print(f"Error in password popup handling: {e}")
-        
-#         # STRATEGY 2: Look for modal popups with OK/Close buttons (ORIGINAL CODE)
-#         try:
-#             # Look for modals or dialogs
-#             modals = driver.find_elements(By.CSS_SELECTOR, ".modal, .ant-modal, .dialog, [role='dialog'], .ant-modal-content")
-#             for modal in modals:
-#                 try:
-#                     # Check if modal is visible
-#                     if modal.is_displayed():
-#                         print("Found visible modal/dialog")
-                        
-#                         # Get all text in modal for debugging
-#                         modal_text = modal.text
-#                         print(f"Modal text: {modal_text[:200]}...")
-                        
-#                         # Look for OK button in the modal
-#                         ok_buttons = modal.find_elements(By.XPATH, 
-#                             ".//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ok') or "
-#                             "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'close') or "
-#                             "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'got it') or "
-#                             "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'continue') or "
-#                             "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'proceed')]"
-#                         )
-                        
-#                         if ok_buttons:
-#                             for button in ok_buttons:
-#                                 if button.is_displayed() and button.is_enabled():
-#                                     print(f"Found OK/Close button: '{button.text}', clicking...")
-#                                     button.click()
-#                                     time.sleep(1)
-#                                     popup_handled = True
-#                                     print("✓ Modal closed")
-#                                     break
-#                 except:
-#                     continue
-#         except:
-#             pass
-        
-#         # STRATEGY 3: Look for alert popups
-#         try:
-#             alerts = driver.find_elements(By.CSS_SELECTOR, ".alert, .ant-alert, .notification, .ant-notification")
-#             for alert in alerts:
-#                 try:
-#                     if alert.is_displayed():
-#                         # Look for close button (usually an X)
-#                         close_buttons = alert.find_elements(By.CSS_SELECTOR, ".close, .ant-alert-close-icon, [aria-label='close'], .ant-notification-close-x")
-#                         if close_buttons:
-#                             for close_btn in close_buttons:
-#                                 if close_btn.is_displayed() and close_btn.is_enabled():
-#                                     close_btn.click()
-#                                     time.sleep(0.5)
-#                                     popup_handled = True
-#                                     print("✓ Alert closed")
-#                                     break
-#                 except:
-#                     pass
-#         except:
-#             pass
-        
-#         # STRATEGY 4: Look for any button with "OK" anywhere on page (with visibility check)
-#         if not popup_handled:
-#             try:
-#                 ok_buttons = driver.find_elements(By.XPATH, 
-#                     "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'ok') or "
-#                     "contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'close')]"
-#                 )
-#                 for button in ok_buttons:
-#                     if button.is_displayed() and button.is_enabled():
-#                         print(f"Found visible OK/Close button: '{button.text}', clicking...")
-#                         button.click()
-#                         time.sleep(1)
-#                         popup_handled = True
-#                         print("✓ OK button clicked")
-#                         break
-#             except:
-#                 pass
-        
-#         # STRATEGY 5: Try to close any overlay/backdrop with ESC key as last resort
-#         if not popup_handled:
-#             try:
-#                 # Try pressing ESC key to close modal
-#                 print("Trying ESC key to close popup...")
-#                 from selenium.webdriver.common.keys import Keys
-#                 body = driver.find_element(By.TAG_NAME, "body")
-#                 body.send_keys(Keys.ESCAPE)
-#                 time.sleep(1)
-#                 popup_handled = True
-#                 print("✓ ESC key pressed")
-#             except:
-#                 pass
-        
-#         # STRATEGY 6: Click at center of screen (last resort)
-#         if not popup_handled:
-#             try:
-#                 print("Trying to click at center of screen...")
-#                 actions = ActionChains(driver)
-                
-#                 # Get window size
-#                 window_size = driver.get_window_size()
-#                 center_x = window_size['width'] // 2
-#                 center_y = window_size['height'] // 2
-                
-#                 # Move to center and click
-#                 actions.move_by_offset(center_x, center_y).click().perform()
-#                 time.sleep(1)
-#                 popup_handled = True
-#                 print("✓ Clicked at center of screen")
-#             except:
-#                 pass
-        
-#         if popup_handled:
-#             print("Popup handled successfully")
-#         else:
-#             print("No popup found or popup already closed")
-        
-#         return popup_handled
-        
-#     except Exception as e:
-#         print(f"⚠ Error handling popup: {e}")
-#         return False
-
 def select_brc_type(driver, wait, brc_type):
-    """Select BRC type (FOC or INV) in the portal before IEC selection"""
+    """Select BRC type (FOB or INV) in the portal before IEC selection"""
     try:
         print(f"\nAttempting to select BRC type: {brc_type}")
         time.sleep(2)  # Wait for page to load completely
-        
-        # Map UI brc_type to portal options (FOC or INV)
-        # Assuming brc_type from UI is 'foc' or 'inv' (lowercase)
-        brc_type_upper = brc_type.upper() if brc_type else 'FOC'
+
+        # Map UI brc_type to portal options (FOB or INV)
+        brc_type_upper = brc_type.upper() if brc_type else 'FOB'
         
         # Wait for the BRC type selector to be present
         print("Looking for BRC type selector...")
         
-        # Try multiple strategies to find the BRC type selector
-        brc_type_selector = None
-        
-        # Strategy 1: Look for ant-select with placeholder "Select Type"
+        # Strategy 1: Look for the first ant-select (which is BRC Type)
         try:
-            brc_type_selector = wait.until(
-                EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'ant-select') and .//span[contains(@class, 'ant-select-selection-placeholder') and contains(text(), 'Select Type')]]"))
+            # Find the card-body containing BRC
+            card_body = wait.until(
+                EC.presence_of_element_located((By.CLASS_NAME, "card-body"))
             )
-            print("Found BRC type selector by placeholder")
-        except:
-            # Strategy 2: Look for ant-select with width 150px (from your HTML)
-            try:
-                brc_type_selector = wait.until(
-                    EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'ant-select') and contains(@style, 'width: 150px')]"))
-                )
-                print("Found BRC type selector by style (width: 150px)")
-            except:
-                # Strategy 3: Look for any ant-select that might be the BRC type selector
+            
+            # Find all ant-select elements within card-body
+            ant_selects = card_body.find_elements(By.CLASS_NAME, "ant-select")
+            
+            if len(ant_selects) >= 2:
+                # First ant-select should be BRC Type (width: 150px)
+                brc_type_selector = ant_selects[0]
+                
+                # Verify it's the BRC type selector by placeholder
                 try:
-                    # Get all ant-select elements on the page
-                    ant_selects = driver.find_elements(By.CLASS_NAME, "ant-select")
-                    if ant_selects:
-                        # Try to find one that seems to be for BRC type (usually comes before IEC selector)
-                        for select in ant_selects:
-                            if select.is_displayed():
-                                # Check if it has placeholder text
-                                try:
-                                    placeholder = select.find_element(By.CLASS_NAME, "ant-select-selection-placeholder")
-                                    if "Select Type" in placeholder.text or "Type" in placeholder.text:
-                                        brc_type_selector = select
-                                        print("Found BRC type selector by placeholder text")
-                                        break
-                                except:
-                                    continue
+                    placeholder = brc_type_selector.find_element(
+                        By.CLASS_NAME, "ant-select-selection-placeholder"
+                    )
+                    if "Select Type" in placeholder.text:
+                        print(f"✓ Found BRC type selector: '{placeholder.text}'")
+                        
+                        # Click to open dropdown
+                        print("Clicking BRC type selector...")
+                        brc_type_selector.click()
+                        time.sleep(1)
+                        
+                        # Now find and click the option
+                        # Options are in a dropdown list with class "ant-select-item-option"
+                        dropdown_options = wait.until(
+                            EC.presence_of_all_elements_located((By.CLASS_NAME, "ant-select-item-option"))
+                        )
+                        
+                        print(f"Found {len(dropdown_options)} dropdown options")
+                        
+                        # Look for option matching our brc_type
+                        for option in dropdown_options:
+                            option_text = option.text.strip().upper()
+                            print(f"Option: {option_text}")
+                            if brc_type_upper in option_text or option_text == brc_type_upper:
+                                print(f"Found matching option: '{option.text}', clicking...")
+                                option.click()
+                                time.sleep(1)
+                                print(f"✓ BRC type {brc_type_upper} selected")
+                                return True
+                        
+                        # If exact match not found, click first option
+                        if dropdown_options:
+                            print(f"No exact match, clicking first option: '{dropdown_options[0].text}'")
+                            dropdown_options[0].click()
+                            time.sleep(1)
+                            print("✓ Clicked first dropdown option")
+                            return True
+                        
+                    else:
+                        print(f"Placeholder text is: '{placeholder.text}'")
                 except Exception as e:
-                    print(f"Could not find BRC type selector: {e}")
-                    return False
+                    print(f"Error checking placeholder: {e}")
+            else:
+                print(f"Found only {len(ant_selects)} ant-select elements, expected at least 2")
+                
+        except Exception as e:
+            print(f"Error in Strategy 1: {e}")
         
-        if brc_type_selector:
-            # Click the selector to open dropdown
-            print("Clicking BRC type selector to open dropdown...")
-            brc_type_selector.click()
-            time.sleep(1)
+        # Strategy 2: Direct approach using the search input
+        try:
+            print("\nTrying Strategy 2: Direct search input approach...")
             
-            # Now we need to select the option (FOC or INV)
-            # First try to find the search input within the selector
-            try:
-                search_input = brc_type_selector.find_element(By.CLASS_NAME, "ant-select-selection-search-input")
-                if search_input:
-                    # Clear and type the BRC type
-                    print(f"Typing BRC type: {brc_type_upper}")
-                    search_input.click()
-                    time.sleep(0.5)
-                    search_input.send_keys(Keys.CONTROL + "a")
-                    search_input.send_keys(Keys.DELETE)
-                    time.sleep(0.5)
-                    search_input.send_keys(brc_type_upper)
-                    time.sleep(1)
-                    
-                    # Press Enter to select
-                    search_input.send_keys(Keys.RETURN)
-                    time.sleep(1)
-                    print(f"✓ BRC type {brc_type_upper} selected via search input")
-                    return True
-            except:
-                print("Could not find search input, trying dropdown options...")
+            # Find the first ant-select-search-input (for BRC Type)
+            search_inputs = driver.find_elements(By.CLASS_NAME, "ant-select-selection-search-input")
             
-            # If search input not found, look for dropdown options
-            try:
-                # Wait for dropdown options to appear
+            if len(search_inputs) >= 1:
+                brc_search_input = search_inputs[0]
+                
+                print("Clicking BRC type search input...")
+                brc_search_input.click()
+                time.sleep(0.5)
+                
+                # Type the BRC type
+                print(f"Typing BRC type: {brc_type_upper}")
+                brc_search_input.send_keys(brc_type_upper)
                 time.sleep(1)
                 
-                # Look for dropdown options
-                dropdown_options = driver.find_elements(By.CSS_SELECTOR, ".ant-select-item-option")
-                if dropdown_options:
-                    print(f"Found {len(dropdown_options)} dropdown options")
-                    
-                    # Look for the option with text matching our BRC type
-                    for option in dropdown_options:
-                        option_text = option.text.strip().upper()
-                        if brc_type_upper in option_text or option_text in brc_type_upper:
-                            print(f"Found matching option: '{option.text}', clicking...")
-                            option.click()
-                            time.sleep(1)
-                            print(f"✓ BRC type {brc_type_upper} selected from dropdown")
-                            return True
-                    
-                    # If exact match not found, click first option
-                    print("Exact match not found, clicking first option...")
-                    dropdown_options[0].click()
-                    time.sleep(1)
-                    print("✓ Clicked first dropdown option")
-                    return True
-                else:
-                    print("No dropdown options found")
-                    return False
-            except Exception as e:
-                print(f"Error selecting from dropdown: {e}")
-                return False
-        else:
-            print("⚠ Could not find BRC type selector")
-            return False
+                # Press Enter
+                brc_search_input.send_keys(Keys.RETURN)
+                time.sleep(1)
+                print(f"✓ BRC type {brc_type_upper} entered")
+                return True
+                
+        except Exception as e:
+            print(f"Error in Strategy 2: {e}")
+        
+        # Strategy 3: Look by style attribute (width: 150px)
+        try:
+            print("\nTrying Strategy 3: Style attribute approach...")
+            
+            brc_type_select = wait.until(
+                EC.element_to_be_clickable((By.XPATH, 
+                    "//div[contains(@class, 'ant-select') and contains(@style, 'width: 150px')]"
+                ))
+            )
+            
+            print("Found BRC type selector by style (width: 150px)")
+            brc_type_select.click()
+            time.sleep(1)
+            
+            # Now press down arrow and Enter to select
+            actions = ActionChains(driver)
+            actions.send_keys(brc_type_upper)
+            time.sleep(0.5)
+            actions.send_keys(Keys.RETURN)
+            actions.perform()
+            time.sleep(1)
+            
+            print(f"✓ BRC type {brc_type_upper} selected using keyboard")
+            return True
+            
+        except Exception as e:
+            print(f"Error in Strategy 3: {e}")
+        
+        print("⚠ Could not select BRC type after trying all strategies")
+        return False
     
     except Exception as e:
         print(f"⚠ Could not select BRC type: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def login_and_navigate(username, password, process_type, iec_number=None, file_to_upload=None, brc_type=None):
@@ -345,7 +178,7 @@ def login_and_navigate(username, password, process_type, iec_number=None, file_t
         process_type (str): The process type selected in our app
         iec_number (str, optional): IEC number to select in the portal
         file_to_upload (str, optional): Path to the file to upload
-        brc_type (str, optional): BRC type (FOC or INV) for BRC process
+        brc_type (str, optional): BRC type (FOB or INV) for BRC process
     
     Returns:
         dict: Result with status and message
@@ -367,12 +200,17 @@ def login_and_navigate(username, password, process_type, iec_number=None, file_t
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--window-size=1920,1080')
         chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument("--disable-save-password-bubble")
+        chrome_options.add_argument("--disable-notifications")
+        chrome_options.add_experimental_option("prefs", {
+            "credentials_enable_service": False,
+            "profile.password_manager_enabled": False
+        })
         # NO HEADLESS - Browser will be visible
         # chrome_options.add_argument('--headless')  # REMOVED
         
         # Initialize Chrome driver
         print("Initializing Chrome driver...")
-        # driver = webdriver.Chrome(options=chrome_options)
         driver = webdriver.Chrome(options=chrome_options)
         
         # Navigate to CIP-Signal portal
@@ -426,9 +264,6 @@ def login_and_navigate(username, password, process_type, iec_number=None, file_t
         print("Waiting for login to complete...")
         time.sleep(3)
         
-        # Handle any popups that appear after login
-        # handle_popup(driver, wait)
-        
         # Check if login was successful by looking for dashboard elements
         print("Checking for successful login...")
         
@@ -455,9 +290,6 @@ def login_and_navigate(username, password, process_type, iec_number=None, file_t
                 driver.get(card_url)
                 time.sleep(3)
                 
-                # Handle any popups that might appear after navigation
-                # handle_popup(driver, wait)
-                
                 # Check if we're on the right page
                 current_url = driver.current_url
                 if card_name in current_url:
@@ -466,7 +298,7 @@ def login_and_navigate(username, password, process_type, iec_number=None, file_t
                 else:
                     print(f"⚠ Might not be on {card_name} dashboard, but login was successful")
                 
-                # FOR BRC PROCESS: Select BRC type first (FOC or INV)
+                # FOR BRC PROCESS: Select BRC type first (FOB or INV)
                 if process_type == 'brc' and brc_type:
                     select_brc_type_success = select_brc_type(driver, wait, brc_type)
                     if select_brc_type_success:
@@ -546,233 +378,223 @@ def login_and_navigate(username, password, process_type, iec_number=None, file_t
     return result
 
 def select_iec_number(driver, wait, iec_number):
-    """Select IEC number in the portal"""
+    """Select IEC number in the portal - should be called AFTER BRC type selection for BRC process"""
     try:
         print(f"\nAttempting to select IEC number: {iec_number}")
-        time.sleep(2)  # Wait for page to load completely
+        time.sleep(2)  # Wait for previous actions to complete
         
-        # Wait for the IEC selector to be present
-        print("Looking for IEC selector...")
-        
-        # Try multiple strategies to find the IEC selector
-        iec_input = None
-        
-        # Strategy 1: Look for input with id containing 'rc_select'
+        # Strategy 1: Find the second ant-select in card-body (IEC selector)
         try:
-            iec_input = wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "input[id*='rc_select'][type='search']"))
+            # Find the card-body containing BRC
+            card_body = wait.until(
+                EC.presence_of_element_located((By.CLASS_NAME, "card-body"))
             )
-            print("Found IEC input by ID pattern")
-        except:
-            # Strategy 2: Look for ant-select-selection-search-input class
-            try:
-                iec_input = wait.until(
-                    EC.element_to_be_clickable((By.CLASS_NAME, "ant-select-selection-search-input"))
-                )
-                print("Found IEC input by class name")
-            except:
-                # Strategy 3: Look for any input with placeholder containing 'Select IEC'
+            
+            # Find all ant-select elements within card-body
+            ant_selects = card_body.find_elements(By.CLASS_NAME, "ant-select")
+            
+            if len(ant_selects) >= 2:
+                # Second ant-select should be IEC (width: 300px)
+                iec_selector = ant_selects[1]
+                
+                # Verify it's the IEC selector by placeholder
                 try:
-                    iec_input = wait.until(
-                        EC.element_to_be_clickable((By.XPATH, "//input[contains(@placeholder, 'IEC') or contains(@placeholder, 'iec')]"))
+                    placeholder = iec_selector.find_element(
+                        By.CLASS_NAME, "ant-select-selection-placeholder"
                     )
-                    print("Found IEC input by placeholder")
-                except:
-                    # Strategy 4: Look for ant-select element and click it first
-                    try:
-                        ant_select = wait.until(
-                            EC.element_to_be_clickable((By.CLASS_NAME, "ant-select-selector"))
-                        )
-                        print("Found ant-select selector, clicking it...")
-                        ant_select.click()
+                    if "Select IEC" in placeholder.text:
+                        print(f"✓ Found IEC selector: '{placeholder.text}'")
+                        
+                        # Click to open dropdown
+                        print("Clicking IEC selector...")
+                        iec_selector.click()
                         time.sleep(1)
                         
-                        # Now look for the search input
-                        iec_input = wait.until(
-                            EC.element_to_be_clickable((By.CLASS_NAME, "ant-select-selection-search-input"))
+                        # Find the search input within this selector
+                        search_input = iec_selector.find_element(
+                            By.CLASS_NAME, "ant-select-selection-search-input"
                         )
-                        print("Found IEC input after clicking selector")
-                    except Exception as e:
-                        print(f"Could not find IEC selector: {e}")
-                        return False
+                        
+                        # Type the IEC number
+                        print(f"Typing IEC number: {iec_number}")
+                        search_input.click()
+                        time.sleep(0.5)
+                        search_input.send_keys(Keys.CONTROL + "a")
+                        search_input.send_keys(Keys.DELETE)
+                        time.sleep(0.5)
+                        search_input.send_keys(iec_number)
+                        time.sleep(1)
+                        
+                        # Press Enter
+                        search_input.send_keys(Keys.RETURN)
+                        time.sleep(1)
+                        print(f"✓ IEC number {iec_number} entered")
+                        
+                        # Wait for dropdown to show options
+                        time.sleep(1)
+                        
+                        # Look for dropdown options and click first one
+                        dropdown_options = driver.find_elements(By.CLASS_NAME, "ant-select-item-option")
+                        if dropdown_options:
+                            print(f"Found {len(dropdown_options)} IEC options")
+                            # Click the first option (should be our IEC)
+                            dropdown_options[0].click()
+                            print("Clicked first IEC option")
+                            time.sleep(1)
+                        
+                        return True
+                        
+                    else:
+                        print(f"IEC placeholder text is: '{placeholder.text}'")
+                except Exception as e:
+                    print(f"Error checking IEC placeholder: {e}")
+            else:
+                print(f"Found only {len(ant_selects)} ant-select elements, expected at least 2")
+                
+        except Exception as e:
+            print(f"Error in IEC Strategy 1: {e}")
         
-        if iec_input:
-            # Clear and enter the IEC number
-            print(f"Entering IEC number: {iec_number}")
-            iec_input.click()
-            time.sleep(0.5)
+        # Strategy 2: Direct approach using the second search input
+        try:
+            print("\nTrying Strategy 2: Direct IEC search input approach...")
             
-            # Clear any existing value
-            iec_input.send_keys(Keys.CONTROL + "a")
-            iec_input.send_keys(Keys.DELETE)
-            time.sleep(0.5)
+            # Find all search inputs
+            search_inputs = driver.find_elements(By.CLASS_NAME, "ant-select-selection-search-input")
             
-            # Type the IEC number
-            iec_input.send_keys(iec_number)
-            time.sleep(1)
-            
-            # Press Enter to select
-            iec_input.send_keys(Keys.RETURN)
-            time.sleep(1)
-            
-            print(f"✓ IEC number {iec_number} entered successfully")
-            
-            # Try to find and click the first dropdown option if available
-            try:
-                # Wait for dropdown options to appear
+            if len(search_inputs) >= 2:
+                iec_search_input = search_inputs[1]  # Second one is for IEC
+                
+                print("Clicking IEC search input...")
+                iec_search_input.click()
+                time.sleep(0.5)
+                
+                # Type the IEC number
+                print(f"Typing IEC number: {iec_number}")
+                iec_search_input.send_keys(Keys.CONTROL + "a")
+                iec_search_input.send_keys(Keys.DELETE)
+                time.sleep(0.5)
+                iec_search_input.send_keys(iec_number)
                 time.sleep(1)
                 
-                # Look for dropdown options
-                dropdown_options = driver.find_elements(By.CSS_SELECTOR, ".ant-select-item-option")
-                if dropdown_options:
-                    print(f"Found {len(dropdown_options)} dropdown options")
-                    # Click the first option
-                    dropdown_options[0].click()
-                    print("Clicked first dropdown option")
-                    time.sleep(1)
-            except:
-                print("No dropdown options found or could not click, continuing...")
+                # Press Enter
+                iec_search_input.send_keys(Keys.RETURN)
+                time.sleep(1)
+                print(f"✓ IEC number {iec_number} entered")
+                return True
+                
+        except Exception as e:
+            print(f"Error in IEC Strategy 2: {e}")
+        
+        # Strategy 3: Look by style attribute (width: 300px)
+        try:
+            print("\nTrying Strategy 3: Style attribute approach for IEC...")
             
+            iec_select = wait.until(
+                EC.element_to_be_clickable((By.XPATH, 
+                    "//div[contains(@class, 'ant-select') and contains(@style, 'width: 300px')]"
+                ))
+            )
+            
+            print("Found IEC selector by style (width: 300px)")
+            iec_select.click()
+            time.sleep(1)
+            
+            # Find the search input
+            search_input = iec_select.find_element(
+                By.CLASS_NAME, "ant-select-selection-search-input"
+            )
+            
+            # Type the IEC number
+            search_input.click()
+            time.sleep(0.5)
+            search_input.send_keys(Keys.CONTROL + "a")
+            search_input.send_keys(Keys.DELETE)
+            time.sleep(0.5)
+            search_input.send_keys(iec_number)
+            time.sleep(1)
+            search_input.send_keys(Keys.RETURN)
+            time.sleep(1)
+            
+            print(f"✓ IEC number {iec_number} selected")
             return True
-        else:
-            return False
+            
+        except Exception as e:
+            print(f"Error in IEC Strategy 3: {e}")
+        
+        print("⚠ Could not select IEC number after trying all strategies")
+        return False
     
     except Exception as e:
         print(f"⚠ Could not select IEC number: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def upload_file_to_portal(driver, wait, file_path):
-    """Upload file to the portal"""
+    """Upload file to the portal after BRC type and IEC selection"""
     try:
         print(f"\nAttempting to upload file: {file_path}")
-        time.sleep(2)  # Wait for page to settle
+        time.sleep(2)  # Wait for previous selections to complete
         
-        # Look for file input element
+        # Look for file input in the card-body
         print("Looking for file input...")
         
-        # Try multiple strategies to find file input
-        file_input = None
-        
-        # Strategy 1: Look for input with type='file'
+        # Strategy 1: Look in card-body
         try:
-            file_input = wait.until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='file']"))
+            card_body = wait.until(
+                EC.presence_of_element_located((By.CLASS_NAME, "card-body"))
             )
-            print("Found file input by type attribute")
-        except:
-            # Strategy 2: Look for input with class containing 'file-input'
-            try:
-                file_input = wait.until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "input.file-input"))
-                )
-                print("Found file input by class name")
-            except:
-                # Strategy 3: Look for any input that accepts files
-                try:
-                    file_input = wait.until(
-                        EC.presence_of_element_located((By.XPATH, "//input[@accept='.xlsx,.xls,.pdf,.doc,.docx,.txt']"))
-                    )
-                    print("Found file input by accept attribute")
-                except:
-                    # Strategy 4: Look for file input in the card body
-                    try:
-                        card_body = wait.until(
-                            EC.presence_of_element_located((By.CLASS_NAME, "card-body"))
-                        )
-                        file_input = card_body.find_element(By.CSS_SELECTOR, "input[type='file']")
-                        print("Found file input in card body")
-                    except Exception as e:
-                        print(f"Could not find file input: {e}")
-                        return False
-        
-        if file_input:
-            # Send the file path to the input element
-            print(f"Sending file path to input: {file_path}")
+            
+            # Find file input in card-body
+            file_input = card_body.find_element(By.CSS_SELECTOR, "input[type='file']")
+            print("Found file input in card-body")
+            
+            # Send the file path
+            print(f"Sending file path: {file_path}")
             file_input.send_keys(os.path.abspath(file_path))
             time.sleep(2)
             
-            # Handle any popup that might appear after file selection
-            # handle_popup(driver, wait)
+            # Look for upload button in card-body
+            upload_button = card_body.find_element(By.CLASS_NAME, "upload-btn")
+            print("Found upload button")
             
-            # Look for upload button
-            print("Looking for upload button...")
-            upload_button = None
+            # Click upload button
+            print("Clicking upload button...")
+            upload_button.click()
+            time.sleep(3)
             
-            # Strategy 1: Look for button with class 'upload-btn'
-            try:
-                upload_button = wait.until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, "button.upload-btn"))
-                )
-                print("Found upload button by class")
-            except:
-                # Strategy 2: Look for button containing 'Upload' text
-                try:
-                    upload_button = wait.until(
-                        EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Upload')]"))
-                    )
-                    print("Found upload button by text")
-                except:
-                    # Strategy 3: Look for any primary button
-                    try:
-                        upload_button = wait.until(
-                            EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn-primary"))
-                        )
-                        print("Found upload button by primary class")
-                    except Exception as e:
-                        print(f"Could not find upload button: {e}")
+            print("✓ File upload initiated")
+            return True
             
-            if upload_button:
-                # Click the upload button
-                print("Clicking upload button...")
-                upload_button.click()
-                time.sleep(3)
-                
-                # Handle any popup that might appear after upload
-                # handle_popup(driver, wait)
-                
-                # Check for upload success
-                print("Checking for upload success...")
-                
-                # Wait a bit for upload to complete
-                time.sleep(5)
-                
-                # Look for success message or indication
-                try:
-                    # Look for success toast/message
-                    success_elements = driver.find_elements(By.XPATH, 
-                        "//*[contains(text(), 'Success') or contains(text(), 'success') or contains(text(), 'uploaded') or contains(text(), 'Uploaded')]")
-                    
-                    # Also check for table rows (uploaded files appear in table)
-                    table_rows = driver.find_elements(By.CSS_SELECTOR, ".ant-table-tbody tr")
-                    
-                    if success_elements or table_rows:
-                        print(f"✓ File upload appears successful")
-                        
-                        # Print the uploaded filename from table if available
-                        if table_rows and len(table_rows) > 0:
-                            try:
-                                first_row_cells = table_rows[0].find_elements(By.TAG_NAME, "td")
-                                if len(first_row_cells) > 1:
-                                    filename = first_row_cells[1].text
-                                    print(f"  Uploaded file appears in table: {filename}")
-                            except:
-                                pass
-                        
-                        return True
-                    else:
-                        print("⚠ No clear success message found, but upload button was clicked")
-                        return True
-                except Exception as e:
-                    print(f"⚠ Could not verify upload success: {e}")
-                    # Still return True since we clicked upload
-                    return True
-            else:
-                print("⚠ Could not find upload button, file was selected but not uploaded")
-                return False
-        else:
-            print("⚠ Could not find file input element")
-            return False
-    
+        except Exception as e:
+            print(f"Error in upload Strategy 1: {e}")
+        
+        # Strategy 2: Direct file input search
+        try:
+            file_input = wait.until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "input.file-input[type='file']"))
+            )
+            
+            print("Found file input by class 'file-input'")
+            file_input.send_keys(os.path.abspath(file_path))
+            time.sleep(2)
+            
+            # Find upload button by class
+            upload_button = wait.until(
+                EC.element_to_be_clickable((By.CLASS_NAME, "upload-btn"))
+            )
+            
+            upload_button.click()
+            time.sleep(3)
+            print("✓ File uploaded")
+            return True
+            
+        except Exception as e:
+            print(f"Error in upload Strategy 2: {e}")
+        
+        print("⚠ Could not upload file")
+        return False
+        
     except Exception as e:
         print(f"⚠ Error during file upload: {e}")
         import traceback
@@ -845,7 +667,7 @@ if __name__ == "__main__":
         fixed_username = "asdf@12331"
         fixed_password = "1234"
         fixed_process = "brc"  # Test BRC process
-        fixed_brc_type = "FOC"  # Test BRC type
+        fixed_brc_type = "FOB"  # Test BRC type
         fixed_iec = "ALFA12345"  # Test IEC number
         
         print(f"Testing CIP-Signal login with fixed credentials")
