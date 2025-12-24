@@ -113,6 +113,186 @@ def select_brc_type(driver, wait, brc_type):
         traceback.print_exc()
         return False
 
+def select_iec_number(driver, wait, iec_number, process_type='brc'):
+    """Select IEC number in the portal - handles both BRC and non-BRC processes"""
+    try:
+        print(f"\nAttempting to select IEC number: {iec_number} for process: {process_type}")
+        time.sleep(2)  # Wait for BRC type selection to complete
+        
+        # For BRC process: We need to find the SECOND dropdown (IEC), NOT the first (BRC type)
+        if process_type == 'brc':
+            print("BRC process detected - looking for IEC field (should be second dropdown)...")
+            
+            # METHOD 1: Find all dropdowns and use the second one for IEC
+            try:
+                # Find all ant-select dropdown containers
+                ant_selects = wait.until(
+                    EC.presence_of_all_elements_located((By.CLASS_NAME, "ant-select-selector"))
+                )
+                print(f"Found {len(ant_selects)} dropdown selectors")
+                
+                # For BRC: First dropdown = BRC Type, Second dropdown = IEC
+                if len(ant_selects) >= 2:
+                    iec_dropdown = ant_selects[1]  # SECOND dropdown is for IEC
+                    print("Found IEC dropdown (second dropdown)")
+                    
+                    # Click the IEC dropdown to open it
+                    print("Clicking IEC dropdown...")
+                    iec_dropdown.click()
+                    time.sleep(1)
+                    
+                    # Now find the search input inside the dropdown
+                    search_inputs = wait.until(
+                        EC.presence_of_all_elements_located((By.CLASS_NAME, "ant-select-selection-search-input"))
+                    )
+                    
+                    if len(search_inputs) >= 2:
+                        # The second search input corresponds to IEC dropdown
+                        iec_search_input = search_inputs[1]
+                        print("Found IEC search input")
+                    else:
+                        # Fallback: get active search input
+                        iec_search_input = driver.switch_to.active_element
+                    
+                    # Clear and type IEC number
+                    print(f"Typing IEC number: {iec_number}")
+                    iec_search_input.send_keys(Keys.CONTROL + "a")
+                    iec_search_input.send_keys(Keys.DELETE)
+                    time.sleep(0.5)
+                    
+                    # Type slowly
+                    for char in iec_number:
+                        iec_search_input.send_keys(char)
+                        time.sleep(0.1)
+                    
+                    time.sleep(2)  # Wait for options to appear
+                    
+                    # Select the option (press DOWN then ENTER)
+                    print("Selecting IEC from dropdown...")
+                    iec_search_input.send_keys(Keys.ARROW_DOWN)
+                    time.sleep(0.5)
+                    iec_search_input.send_keys(Keys.ENTER)
+                    time.sleep(1)
+                    
+                    print(f"✓ IEC number {iec_number} selected successfully")
+                    return True
+                else:
+                    print(f"⚠ Expected at least 2 dropdowns for BRC, found {len(ant_selects)}")
+                    
+            except Exception as e:
+                print(f"Method 1 for BRC failed: {e}")
+            
+            # METHOD 2: Look for specific IEC placeholder
+            try:
+                print("\nTrying Method 2: Look for IEC placeholder...")
+                
+                # Find all dropdown placeholders
+                placeholders = driver.find_elements(By.CLASS_NAME, "ant-select-selection-placeholder")
+                print(f"Found {len(placeholders)} dropdown placeholders")
+                
+                # Look for the one containing "IEC", "Exporter", or "Search"
+                for i, placeholder in enumerate(placeholders):
+                    placeholder_text = placeholder.text.lower()
+                    print(f"Placeholder {i}: '{placeholder_text}'")
+                    
+                    if any(keyword in placeholder_text for keyword in ['iec', 'exporter', 'search', 'select']):
+                        print(f"Found IEC placeholder at index {i}")
+                        
+                        # Get the parent dropdown and click it
+                        dropdown = placeholder.find_element(By.XPATH, "../..")  # Go up to ant-select
+                        dropdown.click()
+                        time.sleep(1)
+                        
+                        # Find the search input
+                        search_input = dropdown.find_element(By.CLASS_NAME, "ant-select-selection-search-input")
+                        
+                        # Type IEC
+                        print(f"Typing IEC: {iec_number}")
+                        search_input.send_keys(Keys.CONTROL + "a")
+                        search_input.send_keys(Keys.DELETE)
+                        time.sleep(0.5)
+                        search_input.send_keys(iec_number)
+                        time.sleep(2)
+                        
+                        # Select from dropdown
+                        search_input.send_keys(Keys.ARROW_DOWN)
+                        time.sleep(0.5)
+                        search_input.send_keys(Keys.ENTER)
+                        time.sleep(1)
+                        
+                        print(f"✓ IEC selected via placeholder method")
+                        return True
+                        
+            except Exception as e:
+                print(f"Method 2 for BRC failed: {e}")
+        
+        # For NON-BRC processes (original logic)
+        else:
+            print("Non-BRC process - using standard IEC selection...")
+            
+            # Try to find the IEC selector
+            print("Looking for IEC selector...")
+            time.sleep(2)
+            
+            # METHOD: Look for any search/select element
+            try:
+                # Find all input fields
+                all_inputs = driver.find_elements(By.TAG_NAME, "input")
+                print(f"Found {len(all_inputs)} input fields on page")
+                
+                iec_input = None
+                for inp in all_inputs:
+                    try:
+                        placeholder = inp.get_attribute("placeholder") or ""
+                        if "iec" in placeholder.lower() or "search" in placeholder.lower():
+                            iec_input = inp
+                            print(f"Found IEC input: placeholder='{placeholder}'")
+                            break
+                    except:
+                        continue
+                
+                if iec_input:
+                    print("Clicking IEC input field...")
+                    driver.execute_script("arguments[0].scrollIntoView(true);", iec_input)
+                    time.sleep(0.5)
+                    driver.execute_script("arguments[0].click();", iec_input)
+                    time.sleep(1)
+                    
+                    # Clear and type
+                    iec_input.send_keys(Keys.CONTROL + "a")
+                    iec_input.send_keys(Keys.DELETE)
+                    time.sleep(0.5)
+                    
+                    print(f"Typing IEC: {iec_number}")
+                    for char in iec_number:
+                        iec_input.send_keys(char)
+                        time.sleep(0.1)
+                    
+                    time.sleep(2)
+                    
+                    # Select option
+                    print("Selecting IEC...")
+                    iec_input.send_keys(Keys.ARROW_DOWN)
+                    time.sleep(0.5)
+                    iec_input.send_keys(Keys.ENTER)
+                    time.sleep(1)
+                    
+                    print(f"✓ IEC number {iec_number} selected")
+                    return True
+                    
+            except Exception as e:
+                print(f"Non-BRC method failed: {e}")
+        
+        print("⚠ All IEC selection methods failed")
+        return False
+        
+    except Exception as e:
+        print(f"⚠ Could not select IEC number: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 def login_and_navigate(username, password, process_type, iec_number=None, file_to_upload=None, brc_type=None):
     """
     Automate login to CIP-Signal portal and navigate to specific process dashboard
@@ -321,182 +501,184 @@ def login_and_navigate(username, password, process_type, iec_number=None, file_t
     
     return result
 
-def select_iec_number(driver, wait, iec_number, process_type='brc'):
-    """Select IEC number in the portal - handles both BRC and non-BRC processes"""
-    try:
-        print(f"\nAttempting to select IEC number: {iec_number} for process: {process_type}")
-        time.sleep(2)  # Wait for previous actions to complete
+# def select_iec_number(driver, wait, iec_number, process_type='brc'):
+#     """Select IEC number in the portal - handles both BRC and non-BRC processes"""
+#     try:
+#         print(f"\nAttempting to select IEC number: {iec_number} for process: {process_type}")
+#         time.sleep(2)  # Wait for previous actions to complete
         
-        # Try to find the IEC selector
-        print("Looking for IEC selector...")
+#         # Try to find the IEC selector
+#         print("Looking for IEC selector...")
         
-        # Wait for the page to be fully loaded
-        time.sleep(3)
+#         # Wait for the page to be fully loaded
+#         time.sleep(3)
         
-        # METHOD 1: Try to find by looking for search/select elements
-        try:
-            # First, try to find any input field that looks like it could be for IEC
-            all_inputs = driver.find_elements(By.TAG_NAME, "input")
-            print(f"Found {len(all_inputs)} input fields on page")
+#         # METHOD 1: Try to find by looking for search/select elements
+#         try:
+#             # First, try to find any input field that looks like it could be for IEC
+#             all_inputs = driver.find_elements(By.TAG_NAME, "input")
+#             print(f"Found {len(all_inputs)} input fields on page")
             
-            iec_input = None
-            for inp in all_inputs:
-                try:
-                    placeholder = inp.get_attribute("placeholder") or ""
-                    aria_label = inp.get_attribute("aria-label") or ""
-                    class_name = inp.get_attribute("class") or ""
+#             iec_input = None
+#             for inp in all_inputs:
+#                 try:
+#                     placeholder = inp.get_attribute("placeholder") or ""
+#                     aria_label = inp.get_attribute("aria-label") or ""
+#                     class_name = inp.get_attribute("class") or ""
                     
-                    if ("search" in placeholder.lower() or 
-                        "iec" in placeholder.lower() or 
-                        "select" in placeholder.lower() or
-                        "ant-select" in class_name):
-                        iec_input = inp
-                        print(f"Found potential IEC input: placeholder='{placeholder}', class='{class_name}'")
-                        break
-                except:
-                    continue
+#                     if ("search" in placeholder.lower() or 
+#                         "iec" in placeholder.lower() or 
+#                         "select" in placeholder.lower() or
+#                         "ant-select" in class_name):
+#                         iec_input = inp
+#                         print(f"Found potential IEC input: placeholder='{placeholder}', class='{class_name}'")
+#                         break
+#                 except:
+#                     continue
             
-            if iec_input:
-                print("Clicking IEC input field...")
-                # Scroll to element
-                driver.execute_script("arguments[0].scrollIntoView(true);", iec_input)
-                time.sleep(0.5)
+#             if iec_input:
+#                 print("Clicking IEC input field...")
+#                 # Scroll to element
+#                 driver.execute_script("arguments[0].scrollIntoView(true);", iec_input)
+#                 time.sleep(0.5)
                 
-                # Click using JavaScript to avoid interception
-                driver.execute_script("arguments[0].click();", iec_input)
-                time.sleep(1)
+#                 # Click using JavaScript to avoid interception
+#                 driver.execute_script("arguments[0].click();", iec_input)
+#                 time.sleep(1)
                 
-                # Clear field
-                iec_input.send_keys(Keys.CONTROL + "a")
-                iec_input.send_keys(Keys.DELETE)
-                time.sleep(0.5)
+#                 # Clear field
+#                 iec_input.send_keys(Keys.CONTROL + "a")
+#                 iec_input.send_keys(Keys.DELETE)
+#                 time.sleep(0.5)
                 
-                # Type IEC number slowly
-                print(f"Typing IEC number: {iec_number}")
-                for char in iec_number:
-                    iec_input.send_keys(char)
-                    time.sleep(0.1)  # Type slowly
+#                 # Type IEC number slowly
+#                 print(f"Typing IEC number: {iec_number}")
+#                 for char in iec_number:
+#                     iec_input.send_keys(char)
+#                     time.sleep(0.1)  # Type slowly
                 
-                time.sleep(2)  # Wait for dropdown to appear
+#                 time.sleep(2)  # Wait for dropdown to appear
                 
-                # IMPORTANT: Press DOWN ARROW then ENTER to select from dropdown
-                print("Pressing DOWN ARROW to select first option...")
-                iec_input.send_keys(Keys.ARROW_DOWN)
-                time.sleep(0.5)
-                print("Pressing ENTER to confirm selection...")
-                iec_input.send_keys(Keys.ENTER)
-                time.sleep(1)
+#                 # IMPORTANT: Press DOWN ARROW then ENTER to select from dropdown
+#                 print("Pressing DOWN ARROW to select first option...")
+#                 iec_input.send_keys(Keys.ARROW_DOWN)
+#                 time.sleep(0.5)
+#                 print("Pressing ENTER to confirm selection...")
+#                 iec_input.send_keys(Keys.ENTER)
+#                 time.sleep(1)
                 
-                print(f"✓ IEC number {iec_number} selected via keyboard navigation")
-                return True
+#                 print(f"✓ IEC number {iec_number} selected via keyboard navigation")
+#                 return True
             
-        except Exception as e:
-            print(f"Method 1 failed: {e}")
+#         except Exception as e:
+#             print(f"Method 1 failed: {e}")
         
-        # METHOD 2: Look for ant-select components
-        try:
-            print("\nTrying Method 2: ant-select component...")
+#         # METHOD 2: Look for ant-select components
+#         try:
+#             print("\nTrying Method 2: ant-select component...")
             
-            # Find all ant-select components
-            ant_selects = driver.find_elements(By.CLASS_NAME, "ant-select")
-            print(f"Found {len(ant_selects)} ant-select components")
+#             # Find all ant-select components
+#             ant_selects = driver.find_elements(By.CLASS_NAME, "ant-select")
+#             print(f"Found {len(ant_selects)} ant-select components")
             
-            if ant_selects:
-                # For non-BRC processes, use the first ant-select
-                target_select = ant_selects[0]
+#             if ant_selects:
+#                 # For non-BRC processes, use the first ant-select
+#                 target_select = ant_selects[0]
                 
-                # Click to open dropdown
-                print("Clicking ant-select to open dropdown...")
-                target_select.click()
-                time.sleep(1)
+#                 # Click to open dropdown
+#                 print("Clicking ant-select to open dropdown...")
+#                 target_select.click()
+#                 time.sleep(1)
                 
-                # Find the search input
-                search_input = target_select.find_element(
-                    By.CLASS_NAME, "ant-select-selection-search-input"
-                )
+#                 # Find the search input
+#                 search_input = target_select.find_element(
+#                     By.CLASS_NAME, "ant-select-selection-search-input"
+#                 )
                 
-                # Clear and type
-                search_input.send_keys(Keys.CONTROL + "a")
-                search_input.send_keys(Keys.DELETE)
-                time.sleep(0.5)
+#                 # Clear and type
+#                 search_input.send_keys(Keys.CONTROL + "a")
+#                 search_input.send_keys(Keys.DELETE)
+#                 time.sleep(0.5)
                 
-                print(f"Typing IEC: {iec_number}")
-                search_input.send_keys(iec_number)
-                time.sleep(2)  # Wait for dropdown
+#                 print(f"Typing IEC: {iec_number}")
+#                 search_input.send_keys(iec_number)
+#                 time.sleep(2)  # Wait for dropdown
                 
-                # Try to find dropdown options
-                try:
-                    # Look for the dropdown container
-                    dropdown = driver.find_element(By.CLASS_NAME, "ant-select-dropdown")
-                    options = dropdown.find_elements(By.CLASS_NAME, "ant-select-item-option")
+#                 # Try to find dropdown options
+#                 try:
+#                     # Look for the dropdown container
+#                     dropdown = driver.find_element(By.CLASS_NAME, "ant-select-dropdown")
+#                     options = dropdown.find_elements(By.CLASS_NAME, "ant-select-item-option")
                     
-                    if options:
-                        print(f"Found {len(options)} dropdown options")
-                        # Click the first option
-                        options[0].click()
-                        print("Clicked first dropdown option")
-                    else:
-                        # No options, press Enter
-                        print("No options found, pressing Enter...")
-                        search_input.send_keys(Keys.ENTER)
-                except:
-                    # If no dropdown found, press Enter
-                    print("Dropdown not found, pressing Enter...")
-                    search_input.send_keys(Keys.ENTER)
+#                     if options:
+#                         print(f"Found {len(options)} dropdown options")
+#                         # Click the first option
+#                         options[0].click()
+#                         print("Clicked first dropdown option")
+#                     else:
+#                         # No options, press Enter
+#                         print("No options found, pressing Enter...")
+#                         search_input.send_keys(Keys.ENTER)
+#                 except:
+#                     # If no dropdown found, press Enter
+#                     print("Dropdown not found, pressing Enter...")
+#                     search_input.send_keys(Keys.ENTER)
                 
-                time.sleep(1)
-                print("✓ IEC selection attempted")
-                return True
+#                 time.sleep(1)
+#                 print("✓ IEC selection attempted")
+#                 return True
                 
-        except Exception as e:
-            print(f"Method 2 failed: {e}")
+#         except Exception as e:
+#             print(f"Method 2 failed: {e}")
         
-        # METHOD 3: Simple approach - just find and type into search field
-        try:
-            print("\nTrying Method 3: Direct search field...")
+#         # METHOD 3: Simple approach - just find and type into search field
+#         try:
+#             print("\nTrying Method 3: Direct search field...")
             
-            # Try to find search field by various attributes
-            search_fields = driver.find_elements(By.XPATH, 
-                "//input[@type='search' or contains(@class, 'search') or contains(@placeholder, 'Search') or contains(@placeholder, 'IEC')]"
-            )
+#             # Try to find search field by various attributes
+#             search_fields = driver.find_elements(By.XPATH, 
+#                 "//input[@type='search' or contains(@class, 'search') or contains(@placeholder, 'Search') or contains(@placeholder, 'IEC')]"
+#             )
             
-            if search_fields:
-                search_field = search_fields[0]
-                print("Found search field")
+#             if search_fields:
+#                 search_field = search_fields[0]
+#                 print("Found search field")
                 
-                # Click and clear
-                search_field.click()
-                time.sleep(0.5)
-                search_field.send_keys(Keys.CONTROL + "a")
-                search_field.send_keys(Keys.DELETE)
+#                 # Click and clear
+#                 search_field.click()
+#                 time.sleep(0.5)
+#                 search_field.send_keys(Keys.CONTROL + "a")
+#                 search_field.send_keys(Keys.DELETE)
                 
-                # Type IEC
-                print(f"Typing IEC: {iec_number}")
-                search_field.send_keys(iec_number)
-                time.sleep(1)
+#                 # Type IEC
+#                 print(f"Typing IEC: {iec_number}")
+#                 search_field.send_keys(iec_number)
+#                 time.sleep(1)
                 
-                # Press TAB then ENTER (TAB to blur, ENTER to submit)
-                search_field.send_keys(Keys.TAB)
-                time.sleep(0.5)
+#                 # Press TAB then ENTER (TAB to blur, ENTER to submit)
+#                 search_field.send_keys(Keys.TAB)
+#                 time.sleep(0.5)
                 
-                # Sometimes we need to press ENTER on the next element
-                driver.switch_to.active_element.send_keys(Keys.ENTER)
+#                 # Sometimes we need to press ENTER on the next element
+#                 driver.switch_to.active_element.send_keys(Keys.ENTER)
                 
-                time.sleep(1)
-                print("✓ IEC entered via direct field")
-                return True
+#                 time.sleep(1)
+#                 print("✓ IEC entered via direct field")
+#                 return True
                 
-        except Exception as e:
-            print(f"Method 3 failed: {e}")
+#         except Exception as e:
+#             print(f"Method 3 failed: {e}")
         
-        print("⚠ All IEC selection methods failed")
-        return False
+#         print("⚠ All IEC selection methods failed")
+#         return False
         
-    except Exception as e:
-        print(f"⚠ Could not select IEC number: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+#     except Exception as e:
+#         print(f"⚠ Could not select IEC number: {e}")
+#         import traceback
+#         traceback.print_exc()
+#         return False
+
+
 
 # def upload_file_to_portal(driver, wait, file_path):
 #     """Upload file to the portal after BRC type and IEC selection"""
